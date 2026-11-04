@@ -1,4 +1,4 @@
-import logoImg from './imports/image-62.png'
+import { fortinetLogoSrc as logoImg } from './fortinetLogoData'
 
 export function FortinetLogo() {
   return (
