@@ -1,4 +1,6 @@
-import logoImg from './imports/image-62.png'
+// Uses the embedded data URI, not a .png import: Figma Make stores PNGs as Git LFS
+// pointers, so a PNG import shows up blank on the deployed site.
+import { fortinetLogoSrc as logoImg } from './fortinetLogoData'
 
 export function FortinetLogo() {
   return (
