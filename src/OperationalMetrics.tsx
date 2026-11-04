@@ -18,8 +18,6 @@ const A = {
   backlinks: [0,50,64,100,151,171,171,171,189,220,225,264,283,285,285,287,369,388,397,397,397,398,439,450,484,622,678,714,732,770,808,868,877,910,993,1028,1053,1113,1130,1173],
   ilSub: [0,0,6,10,16,16,17,17,19,19,23,26,26,26,29,29,31,33,33,33,33,34,37,40,40,40,40,40,40,44,45,49,49,49,49,55,55,55,55,55],
   ilLive: [0,0,0,0,1,3,4,4,5,6,9,10,10,10,15,16,17,17,17,17,17,20,20,21,24,25,25,25,25,29,29,29,29,29,29,32,32,32,32,32],
-  // Infographics weekly overall plan (CSV 'Total' row): 50 until it was raised to 72 by 02 Nov
-  infPlan: [...Array(25).fill(50), 53,53,59,59,59,59,67,66,69,73,74,74,72,72,72],
   infSub: [0,0,2,4,7,8,9,10,12,15,18,18,21,24,27,29,35,35,38,38,41,41,41,46,48,50,51,51,51,51,59,59,60,60,64,65,65,65,65,65],
   infLive: [0,0,0,0,0,0,1,2,3,4,10,10,16,20,20,26,26,26,26,26,27,29,32,36,44,45,45,45,46,46,46,46,48,48,48,48,48,51,51,51],
 }
@@ -41,8 +39,8 @@ const WS: Workstream[] = [
     submitted: { label: 'Internal Linking – Submitted', values: A.ilSub, goal: 100, planToDate: 72 },
     live: { label: 'Internal Linking – Live', values: A.ilLive, goal: 100, planToDate: 66 } },
   { key: 'infographics', title: 'Infographics', subtitle: 'Infographics — Ready vs Published', unit: 'assets',
-    submitted: { label: 'Infographics – Submitted', values: A.infSub, goal: 72, planToDate: 35, planSeries: A.infPlan },
-    live: { label: 'Infographics – Live', values: A.infLive, goal: 72, planToDate: 33, planSeries: A.infPlan } },
+    submitted: { label: 'Infographics – Submitted', values: A.infSub, goal: 50, planToDate: 35 },
+    live: { label: 'Infographics – Live', values: A.infLive, goal: 50, planToDate: 33 } },
 ]
 const BACKLINKS: Track = { label: 'Backlinks – Acquired', values: A.backlinks, goal: 1697, planToDate: 1100 }
 
@@ -120,7 +118,6 @@ function TrackKpis({ t, accent }: { t: Track; accent: string }) {
 function PlanActualChart({ t, series = 'Actual', hero = false, heading }: { t: Track; series?: string; hero?: boolean; heading?: string }) {
   const uid = useId().replace(/:/g, '')
   const [hover, setHover] = useState<number | null>(null)
-  const [pinned, setPinned] = useState<number | null>(null)
   const W = 1120, H = hero ? 460 : 330, L = 52, R = 28, T = 26, B = 46
   const n = t.values.length
   const lastIdx = n - 1
@@ -138,8 +135,7 @@ function PlanActualChart({ t, series = 'Actual', hero = false, heading }: { t: T
   const dayLabel = (i: number) => { const d = weekDate(i); return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]}` }
   const monthStarts = Array.from({ length: N }, (_, i) => i).filter(i => i > 0 && weekDate(i).getMonth() !== weekDate(i - 1).getMonth())
   const yTicks = Array.from({ length: yMax / step + 1 }, (_, k) => k * step)
-  const labelEvery = maxV >= 1000 ? 2 : 1
-  const h = pinned ?? hover
+  const h = hover
 
   return (
     <div style={{ ...card, padding: '18px 18px 10px', position: 'relative' }}>
@@ -150,15 +146,20 @@ function PlanActualChart({ t, series = 'Actual', hero = false, heading }: { t: T
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><i style={{ width: 20, height: 4, background: GREEN, display: 'inline-block', borderRadius: 2 }} />{series} ({fmt(last(t))})</span>
         </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', cursor: 'pointer' }}
-        onMouseLeave={() => setHover(null)}
-        onClick={() => setPinned(p => (p === hover ? null : hover))}
-        onMouseMove={e => {
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', cursor: 'crosshair', touchAction: 'pan-y' }}
+        onPointerMove={e => {
           const r = e.currentTarget.getBoundingClientRect()
           const px = ((e.clientX - r.left) / r.width) * W
           const i = Math.round(((px - L) / (W - L - R)) * (N - 1))
           setHover(i < 0 ? 0 : i > lastIdx ? lastIdx : i)
-        }}>
+        }}
+        onPointerDown={e => {
+          const r = e.currentTarget.getBoundingClientRect()
+          const px = ((e.clientX - r.left) / r.width) * W
+          const i = Math.round(((px - L) / (W - L - R)) * (N - 1))
+          setHover(i < 0 ? 0 : i > lastIdx ? lastIdx : i)
+        }}
+        onPointerLeave={() => setHover(null)}>
         <defs>
           <linearGradient id={`g${uid}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={GREEN} stopOpacity="0.32" /><stop offset="1" stopColor={GREEN} stopOpacity="0.02" /></linearGradient>
           <linearGradient id={`p${uid}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={ORANGE} stopOpacity="0.20" /><stop offset="1" stopColor={ORANGE} stopOpacity="0.01" /></linearGradient>
@@ -181,10 +182,6 @@ function PlanActualChart({ t, series = 'Actual', hero = false, heading }: { t: T
         <path d={path(plan)} fill="none" stroke={ORANGE} strokeWidth="3.5" strokeLinejoin="round" />
         <path d={path(t.values)} fill="none" stroke={GREEN} strokeWidth="4" strokeLinejoin="round" />
         {t.values.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === lastIdx ? 0 : 2.6} fill="#fff" stroke={GREEN} strokeWidth="1.6" />)}
-        {t.values.map((v, i) => (i % labelEvery === 0 || i === lastIdx) && (
-          <text key={`l${i}`} x={x(i)} y={Math.abs(y(v) - y(t.goal)) < 22 && v <= t.goal ? y(v) + 20 : y(v) - 11} textAnchor="middle" fontFamily={SANS} fontSize={hero ? 11.5 : 10.5} fontWeight="800" fill={GREEN}
-            stroke="#fff" strokeWidth="3" paintOrder="stroke">{fmt(v)}</text>
-        ))}
         <circle cx={x(lastIdx)} cy={y(t.values[lastIdx])} r="6" fill={GREEN} stroke="#fff" strokeWidth="2.5" />
         <text x={L + 8} y={y(plan[0]) - 9} textAnchor="start" fontFamily={SANS} fontSize="13" fontWeight="800" fill={ORANGE}>Plan {fmt(plan[0])}</text>
         {plan[lastIdx] !== plan[0] && <text x={W - R - 6} y={y(plan[lastIdx]) - 9} textAnchor="end" fontFamily={SANS} fontSize="13" fontWeight="800" fill={ORANGE}>Plan {fmt(plan[lastIdx])}</text>}
@@ -261,6 +258,17 @@ function planLine(name: string, t: Track, noun: string): { ok: boolean; text: st
 
 function workstreamInsights(ws: Workstream): Insight[] {
   const sub = last(ws.submitted), live = last(ws.live), waiting = sub - live
+  if (ws.key === 'infographics') {
+    const plan = 50
+    return [
+      { tone: 'win', title: 'OVERALL PLAN EXCEEDED',
+        text: `${fmt(sub)} infographics submitted against the overall plan of ${fmt(plan)} — ${fmt(sub - plan)} above plan and ${pctOf(sub, plan)}% delivered.` },
+      { tone: 'win', title: 'LIVE DELIVERY ABOVE PLAN',
+        text: `${fmt(live)} infographics are live against the overall plan of ${fmt(plan)} — ${fmt(live - plan)} above plan. ${pctOf(live, sub)}% of submitted infographics are live.` },
+      { tone: waiting > 0 ? 'info' : 'win', title: 'WK40 PUBLISHING PIPELINE',
+        text: `${fmt(waiting)} submitted infographics are awaiting publish. Week 40 closed at Submitted ${signed(wow(ws.submitted.values))} and Live ${signed(wow(ws.live.values))}; over 4 weeks Submitted ${signed(l4w(ws.submitted.values))} and Live ${signed(l4w(ws.live.values))}.` },
+    ]
+  }
   const ps = planLine('Submitted', ws.submitted, ws.unit), pl = planLine('Live', ws.live, ws.unit)
   const ds = wow(ws.submitted.values), dl = wow(ws.live.values)
   return [
