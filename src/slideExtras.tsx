@@ -30,10 +30,12 @@ export type Extras = { insights: Insight[]; pies: PieCfg[]; pieAfterMetrics: boo
 export type ExtrasCtx = { cg: OKKw[]; art: OKKw[] }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-const N = 42
+const N = 43
 const sec = (t: string) => SECTIONS.find(s => s.title === t)
-const cur = (m: Metric) => m.values[N] ?? 0
-const prv = (m: Metric) => m.values[N - 1] ?? 0
+// Latest reported week for a metric (Brightedge / Airops report one week behind the other sources).
+const lastIdx = (m: Metric) => { for (let i = m.values.length - 1; i >= 0; i--) if (m.values[i] !== null) return i; return N }
+const cur = (m: Metric) => m.values[lastIdx(m)] ?? 0
+const prv = (m: Metric) => m.values[lastIdx(m) - 1] ?? 0
 const isPctName = (n: string) => /%|CTR/i.test(n)
 const lowerBetter = (n: string) => /Avg\. Position|Category Rank/i.test(n)
 const int = (n: number) => Math.round(n).toLocaleString('en-US')
@@ -206,13 +208,13 @@ function genericMetricExtras(s: Section): Insight[] {
     const vals = m.values.filter((x): x is number => x !== null)
     const peak = Math.max(...vals)
     const peakIdx = m.values.indexOf(peak)
-    const WK = ['Jan 05','Jan 12','Jan 19','Jan 26','Feb 02','Feb 09','Feb 16','Feb 23','Mar 02','Mar 09','Mar 16','Mar 23','Mar 30','Apr 06','Apr 13','Apr 20','Apr 27','May 04','May 11','May 18','May 25','Jun 01','Jun 08','Jun 15','Jun 22','Jun 29','Jul 06','Jul 13','Jul 20','Jul 27','Aug 03','Aug 10','Aug 17','Aug 24','Aug 31','Sep 07','Sep 14','Sep 21','Sep 28','Oct 05','Oct 12','Oct 26','Oct 26']
+    const WK = ['Jan 05','Jan 12','Jan 19','Jan 26','Feb 02','Feb 09','Feb 16','Feb 23','Mar 02','Mar 09','Mar 16','Mar 23','Mar 30','Apr 06','Apr 13','Apr 20','Apr 27','May 04','May 11','May 18','May 25','Jun 01','Jun 08','Jun 15','Jun 22','Jun 29','Jul 06','Jul 13','Jul 20','Jul 27','Aug 03','Aug 10','Aug 17','Aug 24','Aug 31','Sep 07','Sep 14','Sep 21','Sep 28','Oct 05','Oct 12','Oct 19','Oct 26','Nov 02']
     if (!lowerBetter(m.name)) {
       const now = cur(m)
       out.push({
-        tone: now >= peak ? 'win' : 'info', title: `43-WEEK PEAK: ${cleanName(m.name).toUpperCase()}`,
+        tone: now >= peak ? 'win' : 'info', title: `44-WEEK PEAK: ${cleanName(m.name).toUpperCase()}`,
         text: now >= peak
-          ? `${fmtMetric(m.name, now)} is the highest value of the 43-week series.`
+          ? `${fmtMetric(m.name, now)} is the highest value of the 44-week series.`
           : `Peak was ${fmtMetric(m.name, peak)} (${WK[peakIdx]}); today's ${fmtMetric(m.name, now)} is ${pctOf(now, peak).toFixed(0)}% of that high.`,
       })
     }
@@ -361,6 +363,29 @@ function currentMetricPie(m: Metric, o: { heading: string; sub: string; unit: st
   }
 }
 
+// Insights + donut for one metric group of the LLM Data Sources tab (Brightedge / Airops / Profound)
+export function getSourceGroupExtras(source: string, group: Section): Pick<Extras, 'insights' | 'pies'> {
+  const label = group.title.replace(/ %$/, '')
+  if (/Score/.test(group.title)) {
+    const rows = group.metrics.map(m => ({ name: m.name.replace(' Score', ''), c: cur(m), p: prv(m) }))
+    const sorted = [...rows].sort((a, b) => b.c - a.c)
+    const f = rows.find(r => r.name === 'Fortinet')!
+    const rank = sorted.findIndex(r => r.name === 'Fortinet') + 1
+    const next = sorted.find(r => r.name !== 'Fortinet')!
+    const dF = f.c - f.p
+    return {
+      insights: [
+        { tone: rank === 1 ? 'win' : 'info', title: rank === 1 ? 'FORTINET LEADS SENTIMENT' : `FORTINET RANKS #${rank}`, text: `Fortinet scores ${f.c} of 100, ${dF === 0 ? 'flat' : `${dF > 0 ? 'up' : 'down'} ${abs(dF)} pt${abs(dF) === 1 ? '' : 's'}`} vs last week.` },
+        { tone: 'info', title: 'NEAREST RIVAL', text: `${next.name} is next at ${next.c}; Fortinet is ${abs(f.c - next.c)} pts ${f.c >= next.c ? 'ahead' : 'behind'}.` },
+        { tone: 'info', title: 'SCORE SPREAD', text: `Scores range from ${sorted[sorted.length - 1].c} (${sorted[sorted.length - 1].name}) to ${sorted[0].c} (${sorted[0].name}) across ${rows.length} tracked brands.` },
+      ],
+      pies: [],
+    }
+  }
+  const heading = /Mention/.test(label) ? 'Who AI Engines Mention Most' : /Citation/.test(label) ? 'Who AI Engines Cite as a Source' : /Voice/.test(label) ? 'Who Owns the AI Conversation' : 'Who AI Assistants Mention Most'
+  return brandExtras(group, { heading, sub: `${source} · ${label} among ${group.metrics.length} tracked brands`, metric: label.toLowerCase() })
+}
+
 // ─── MAIN ENTRY ──────────────────────────────────────────────────────────────
 export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
   const s = sec(title)
@@ -368,15 +393,15 @@ export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
 
   switch (title) {
     case 'Ranking Insights — Overall Keywords':
-      return wrap(positionExtras(s!, { heading: 'Where Fortinet Ranks on Google', sub: 'Semrush keyword set · current week (Oct 26)', beyondLabel: 'Beyond Page 1' }), true)
+      return wrap(positionExtras(s!, { heading: 'Where Fortinet Ranks on Google', sub: 'Semrush keyword set · current week (Nov 02)', beyondLabel: 'Beyond Page 1' }), true)
     case 'Ranking Insights — Bing (Overall Keywords)':
-      return wrap(positionExtras(s!, { heading: 'Where Fortinet Ranks on Bing', sub: 'Bing Webmaster keyword set · current week (Oct 26)', beyondLabel: 'Beyond Page 1' }), true)
+      return wrap(positionExtras(s!, { heading: 'Where Fortinet Ranks on Bing', sub: 'Bing Webmaster keyword set · current week (Nov 02)', beyondLabel: 'Beyond Page 1' }), true)
     case 'Ranking Insights — Cyberglossary (Overall Keywords)':
-      return wrap(positionExtras(s!, { heading: 'Cyberglossary Ranking Spread', sub: 'All Cyberglossary keywords · current week (Oct 26)', beyondLabel: 'Beyond Page 1' }), true)
+      return wrap(positionExtras(s!, { heading: 'Cyberglossary Ranking Spread', sub: 'All Cyberglossary keywords · current week (Nov 02)', beyondLabel: 'Beyond Page 1' }), true)
     case 'Ranking Insights — Cyberglossary (Priority Keywords)':
-      return wrap(positionExtras(s!, { heading: 'Priority Glossary Keywords: Position Mix', sub: 'Cyberglossary primary keywords · current week (Oct 26)', beyondLabel: 'Page 2–10' }), true)
+      return wrap(positionExtras(s!, { heading: 'Priority Glossary Keywords: Position Mix', sub: 'Cyberglossary primary keywords · current week (Nov 02)', beyondLabel: 'Page 2–10' }), true)
     case 'Ranking Insights — Articles (Priority Keywords)':
-      return wrap(positionExtras(s!, { heading: 'Priority Articles: Position Mix', sub: 'Articles primary keywords · current week (Oct 26)', beyondLabel: 'Page 2–10' }), true)
+      return wrap(positionExtras(s!, { heading: 'Priority Articles: Position Mix', sub: 'Articles primary keywords · current week (Nov 02)', beyondLabel: 'Page 2–10' }), true)
 
     case 'Cyberglossary (Category)': {
       const tot = CG_CATS.reduce((a, c) => a + c.total, 0)
@@ -410,7 +435,7 @@ export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
         { tone: 'info', title: 'ROCK-SOLID #1', text: `${solid} keywords have held Position 1 for 10 weeks straight; ${int(same.length)} keywords were unchanged this week.` },
       ]
       return wrap({ insights, pies: [{
-        heading: 'Week-over-Week Rank Movement', sub: 'Cyberglossary primary keywords · Oct 19 → Oct 26', centerValue: int(rows.length), centerLabel: 'keywords',
+        heading: 'Week-over-Week Rank Movement', sub: 'Cyberglossary primary keywords · Oct 26 → Nov 02', centerValue: int(rows.length), centerLabel: 'keywords',
         slices: [
           { label: 'Improved', value: up.length, color: G, display: int(up.length) },
           { label: 'No change', value: same.length, color: GRAY, display: int(same.length) },
@@ -421,12 +446,12 @@ export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
 
     case 'Primary Keywords Explorer': {
       const all = [...ctx.cg, ...ctx.art]
-      const inR = (k: OKKw, lo: number, hi: number) => k.wk43 !== null && k.wk43 !== 101 && k.wk43 >= lo && k.wk43 <= hi
-      const p1 = all.filter(k => k.wk43 === 1).length, p23 = all.filter(k => inR(k, 2, 3)).length
+      const inR = (k: OKKw, lo: number, hi: number) => k.wk44 !== null && k.wk44 !== 101 && k.wk44 >= lo && k.wk44 <= hi
+      const p1 = all.filter(k => k.wk44 === 1).length, p23 = all.filter(k => inR(k, 2, 3)).length
       const p410 = all.filter(k => inR(k, 4, 10)).length, p210 = all.filter(k => inR(k, 11, 100)).length
-      const nr = all.filter(k => k.wk43 === 101).length
+      const nr = all.filter(k => k.wk44 === 101).length
       const page1 = p1 + p23 + p410
-      const moves = all.map(k => ({ kw: k.kw, a: k.wk42 ?? 101, b: k.wk43 ?? 101 }))
+      const moves = all.map(k => ({ kw: k.kw, a: k.wk43 ?? 101, b: k.wk44 ?? 101 }))
       const topUp = [...moves].sort((x, y) => (y.a - y.b) - (x.a - x.b))[0]
       const topDown = [...moves].sort((x, y) => (y.b - y.a) - (x.b - x.a))[0]
       const insights: Insight[] = [
@@ -450,7 +475,7 @@ export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
     case 'Featured Snippets': {
       const m = s!.metrics[0]
       const insights = genericMetricExtras(s!)
-      return wrap({ insights, pies: [currentMetricPie(m, { heading: 'Featured Snippets This Week', sub: 'Current-week metric card value · Oct 26', unit: 'snippets won' })] }, true)
+      return wrap({ insights, pies: [currentMetricPie(m, { heading: 'Featured Snippets This Week', sub: 'Current-week metric card value · Nov 02', unit: 'snippets won' })] }, true)
     }
 
     // ── TRAFFIC ──
@@ -516,7 +541,7 @@ export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
     case 'Search-Generated Engagement (AI Overviews)': {
       const m = s!.metrics[0]
       return wrap({ insights: genericMetricExtras(s!), pies: [currentMetricPie(m, {
-        heading: 'AI Overview Keywords This Week', sub: 'Semrush AIO keyword count · Oct 26', unit: 'AIO keywords',
+        heading: 'AI Overview Keywords This Week', sub: 'Semrush AIO keyword count · Nov 02', unit: 'AIO keywords',
         refs: s!.metrics.slice(1).map(x => ({ label: x.name, display: compact(cur(x)) })),
       })] }, true)
     }
@@ -525,7 +550,7 @@ export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
     case 'Bing AI Performance': {
       const m = s!.metrics[0]
       return wrap({ insights: genericMetricExtras(s!), pies: [currentMetricPie(m, {
-        heading: 'Bing AI Citations This Week', sub: 'Current-week Bing citation count · Oct 26', unit: 'citations',
+        heading: 'Bing AI Citations This Week', sub: 'Current-week Bing citation count · Nov 02', unit: 'citations',
         refs: s!.metrics.slice(1).map(x => ({ label: x.name, display: compact(cur(x)) })),
       })] }, true)
     }
@@ -583,15 +608,15 @@ export function getSlideExtras(title: string, ctx: ExtrasCtx): Extras {
     case 'GL — Gain 2':
       return wrap({
         insights: [
-          { tone: 'win', title: 'ORGANIC TRAFFIC UP 4.8%', text: 'Organic traffic rose from 439K to 461K sessions (+21.1K); the top-10 gaining pages added 19,395 sessions.' },
-          { tone: 'win', title: 'DIRECT TRAFFIC UP 11.3%', text: 'Direct traffic rose from 353.4K to 393.2K sessions (+39.8K); the top-10 gaining pages added 10,553 sessions.' },
-          { tone: 'info', title: 'NEW BLOG PAGE DRIVES ORGANIC', text: 'The new CISO Collective security-hardening release post went from 0 to 14,006 organic sessions, the biggest single gain.' },
+          { tone: 'win', title: 'ORGANIC TRAFFIC UP 3.4%', text: 'Organic traffic rose from 461K to 476K sessions (+15.6K); the top-10 gaining pages added 16,686 sessions.' },
+          { tone: 'win', title: 'DIRECT TRAFFIC UP 8.1%', text: 'Direct traffic rose from 393.2K to 425.0K sessions (+31.8K); the top-10 gaining pages added 29,921 sessions.' },
+          { tone: 'info', title: 'CISO COLLECTIVE POST LEADS ORGANIC', text: 'The CISO Collective security-hardening release post grew from 14,006 to 19,608 organic sessions (+5,602), the biggest single gain.' },
         ],
         pies: [{
-          heading: 'Top-10 Organic Pages: Base + Gain', sub: 'Last 30 days, Oct 19 vs Oct 26', centerValue: '163.3K', centerLabel: 'sessions',
+          heading: 'Top-10 Organic Pages: Base + Gain', sub: 'Last 30 days, Oct 26 vs Nov 02', centerValue: '179.8K', centerLabel: 'sessions',
           slices: [
-            { label: 'Carried-over traffic', value: 143.947, color: '#0284c7', display: '143.9K' },
-            { label: 'New gain', value: 19.395, color: G, display: '+19.4K' },
+            { label: 'Carried-over traffic', value: 163.137, color: '#0284c7', display: '163.1K' },
+            { label: 'New gain', value: 16.686, color: G, display: '+16.7K' },
           ], total: 'none',
         }],
       })
@@ -658,13 +683,13 @@ function ToneIcon({ tone }: { tone: Tone }) {
   )
 }
 
-export function KeyInsights({ insights }: { insights: Insight[] }) {
+export function KeyInsights({ insights, weekLabel = 'Wk44' }: { insights: Insight[]; weekLabel?: string }) {
   if (!insights.length) return null
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
         <span style={{ fontFamily: SANS, fontSize: 15, fontWeight: 800, color: INK, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Key Insights</span>
-        <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, color: DIM }}>Wk43</span>
+        <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, color: DIM }}>{weekLabel}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${insights.length}, minmax(0,1fr))`, gap: 14 }}>
         {insights.map((it, i) => (
@@ -814,7 +839,7 @@ export function CurrentValueDonut({ title, items, overall }: { title: string; it
   return (
     <PieRow pies={[{
       heading: `${title} — Current Week`,
-      sub: 'Current-week metric-card values · Oct 26',
+      sub: 'Current-week metric-card values · Nov 02',
       centerValue: overall?.display ?? '',
       centerLabel: overall?.label ?? '',
       slices: items.map((it, index) => ({ ...it, color: BRAND_COLORS[index % BRAND_COLORS.length] })),
