@@ -9,17 +9,17 @@ const weekDate = (i: number) => new Date(START.getTime() + i * 7 * 86400000)
 const fmtDate = (i: number) => { const d = weekDate(i); return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` }
 
 const A = {
-  npReady: [2,3,6,7,9,11,11,13,14,16,17,17,18,19,19,20,20,21,21,22,22,22,22,22,23,23,23,25,26,26,26,29,30,30,33,33,35,35,38,38],
-  npLive: [0,0,0,0,0,2,2,8,10,11,11,12,13,13,13,13,14,14,14,14,14,14,15,15,21,21,23,23,24,24,24,24,24,24,26,26,28,28,32,32],
+  npReady: [2,3,6,7,9,11,11,13,14,16,17,17,18,19,19,20,20,21,21,22,22,22,22,22,23,23,23,25,26,26,26,29,30,30,33,33,35,35,38,38,40],
+  npLive: [0,0,0,0,0,2,2,8,10,11,11,12,13,13,13,13,14,14,14,14,14,14,15,15,21,21,23,23,24,24,24,24,24,24,26,26,28,28,32,32,32],
   metaSub: [8,9,9,12,13,13,18,19,20,21,22,23,27,27,29,30,32,32,34,38,38,38,40,42,45,47,48,50,50,51,56,58,58,58,61,61,65,68,68,72],
-  crSub: [8,8,8,4,8,8,9,9,12,12,12,19,19,21,24,24,26,26,30,30,30,32,34,37,37,41,41,44,44,45,45,49,49,49,52,53,54,54,57,58],
+  crSub: [8,8,8,4,8,8,9,9,12,12,12,19,19,21,24,24,26,26,30,30,30,32,34,37,37,41,41,44,44,45,45,49,49,49,52,53,54,54,57,58,59],
   metaLive: [8,8,8,8,8,8,8,10,10,10,10,12,12,12,12,12,12,13,15,16,22,23,26,28,29,31,33,34,35,35,35,35,36,36,36,36,36,38,39,39],
-  crLive: [8,8,8,8,8,8,8,8,8,8,8,10,10,10,12,12,12,13,14,14,21,22,25,27,29,31,33,34,35,35,35,35,36,36,36,36,36,37,38,38],
-  backlinks: [0,50,64,100,151,171,171,171,189,220,225,264,283,285,285,287,369,388,397,397,397,398,439,450,484,622,678,714,732,770,808,868,877,910,993,1028,1053,1113,1130,1173],
-  ilSub: [0,0,6,10,16,16,17,17,19,19,23,26,26,26,29,29,31,33,33,33,33,34,37,40,40,40,40,40,40,44,45,49,49,49,49,55,55,55,55,55],
-  ilLive: [0,0,0,0,1,3,4,4,5,6,9,10,10,10,15,16,17,17,17,17,17,20,20,21,24,25,25,25,25,29,29,29,29,29,29,32,32,32,32,32],
-  infSub: [0,0,2,4,7,8,9,10,12,15,18,18,21,24,27,29,35,35,38,38,41,41,41,46,48,50,51,51,51,51,59,59,60,60,64,65,65,65,65,65],
-  infLive: [0,0,0,0,0,0,1,2,3,4,10,10,16,20,20,26,26,26,26,26,27,29,32,36,44,45,45,45,46,46,46,46,48,48,48,48,48,51,51,51],
+  crLive: [8,8,8,8,8,8,8,8,8,8,8,10,10,10,12,12,12,13,14,14,21,22,25,27,29,31,33,34,35,35,35,35,36,36,36,36,36,37,38,38,38],
+  backlinks: [0,50,64,100,151,171,171,171,189,220,225,264,283,285,285,287,369,388,397,397,397,398,439,450,484,622,678,714,732,770,808,868,877,910,993,1028,1053,1113,1130,1173,1192],
+  ilSub: [0,0,6,10,16,16,17,17,19,19,23,26,26,26,29,29,31,33,33,33,33,34,37,40,40,40,40,40,40,44,45,49,49,49,49,55,55,55,55,55,56],
+  ilLive: [0,0,0,0,1,3,4,4,5,6,9,10,10,10,15,16,17,17,17,17,17,20,20,21,24,25,25,25,25,29,29,29,29,29,29,32,32,32,32,32,32],
+  infSub: [0,0,2,4,7,8,9,10,12,15,18,18,21,24,27,29,35,35,38,38,41,41,41,46,48,50,51,51,51,51,59,59,60,60,64,65,65,65,65,65,65],
+  infLive: [0,0,0,0,0,0,1,2,3,4,10,10,16,20,20,26,26,26,26,26,27,29,32,36,44,45,45,45,46,46,46,46,48,48,48,48,48,51,51,51,51],
 }
 
 type Track = { label: string; values: number[]; goal: number; planToDate: number | null; planSeries?: number[] }
@@ -30,19 +30,19 @@ const WS: Workstream[] = [
     submitted: { label: 'New Pages – Submitted', values: A.npReady, goal: 50, planToDate: 35 },
     live: { label: 'New Pages – Live', values: A.npLive, goal: 50, planToDate: 31 } },
   { key: 'refresh', title: 'Content Refresh', subtitle: 'Refreshed pages — Brief Ready vs Published', unit: 'pages',
-    submitted: { label: 'Content Refresh – Submitted', values: A.crSub, goal: 75, planToDate: 52 },
-    live: { label: 'Content Refresh – Live', values: A.crLive, goal: 75, planToDate: 49 } },
+    submitted: { label: 'Content Refresh – Submitted', values: A.crSub, goal: 75, planToDate: 67 },
+    live: { label: 'Content Refresh – Live', values: A.crLive, goal: 75, planToDate: 65 } },
   { key: 'meta', title: 'Meta Data', subtitle: 'Meta data updates — Brief Ready vs Published', unit: 'pages',
     submitted: { label: 'Meta Data – Submitted', values: A.metaSub, goal: 75, planToDate: 52 },
     live: { label: 'Meta Data – Live', values: A.metaLive, goal: 75, planToDate: null } },
   { key: 'linking', title: 'Internal Linking', subtitle: 'Internal link updates — Ready vs Published', unit: 'pages',
-    submitted: { label: 'Internal Linking – Submitted', values: A.ilSub, goal: 100, planToDate: 72 },
-    live: { label: 'Internal Linking – Live', values: A.ilLive, goal: 100, planToDate: 66 } },
+    submitted: { label: 'Internal Linking – Submitted', values: A.ilSub, goal: 100, planToDate: 90 },
+    live: { label: 'Internal Linking – Live', values: A.ilLive, goal: 100, planToDate: 85 } },
   { key: 'infographics', title: 'Infographics', subtitle: 'Infographics — Ready vs Published', unit: 'assets',
-    submitted: { label: 'Infographics – Submitted', values: A.infSub, goal: 50, planToDate: 35 },
-    live: { label: 'Infographics – Live', values: A.infLive, goal: 50, planToDate: 33 } },
+    submitted: { label: 'Infographics – Submitted', values: A.infSub, goal: 50, planToDate: 45 },
+    live: { label: 'Infographics – Live', values: A.infLive, goal: 50, planToDate: 43 } },
 ]
-const BACKLINKS: Track = { label: 'Backlinks – Acquired', values: A.backlinks, goal: 1697, planToDate: 1100 }
+const BACKLINKS: Track = { label: 'Backlinks – Acquired', values: A.backlinks, goal: 1697, planToDate: 1430 }
 
 export const OPS_PAGES = [
   { title: 'OPS — New Content',      short: 'New Content',      source: 'Operations Tracker' },
@@ -239,7 +239,7 @@ function KpiStrip({ title, t, accent }: { title: string; t: Track; accent: strin
   )
 }
 
-// ─── KEY INSIGHTS (current week: 02 Nov 2026, week 40) ───────────────────────
+// ─── KEY INSIGHTS (current week: 09 Nov 2026, week 41) ───────────────────────
 const pctOf = (a: number, b: number) => Math.round((a / b) * 100)
 const signed = (n: number) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`
 const wow = (v: number[]) => v[v.length - 1] - v[v.length - 2]
@@ -265,8 +265,8 @@ function workstreamInsights(ws: Workstream): Insight[] {
         text: `${fmt(sub)} infographics submitted against the overall plan of ${fmt(plan)} — ${fmt(sub - plan)} above plan and ${pctOf(sub, plan)}% delivered.` },
       { tone: 'win', title: 'LIVE DELIVERY ABOVE PLAN',
         text: `${fmt(live)} infographics are live against the overall plan of ${fmt(plan)} — ${fmt(live - plan)} above plan. ${pctOf(live, sub)}% of submitted infographics are live.` },
-      { tone: waiting > 0 ? 'info' : 'win', title: 'WK40 PUBLISHING PIPELINE',
-        text: `${fmt(waiting)} submitted infographics are awaiting publish. Week 40 closed at Submitted ${signed(wow(ws.submitted.values))} and Live ${signed(wow(ws.live.values))}; over 4 weeks Submitted ${signed(l4w(ws.submitted.values))} and Live ${signed(l4w(ws.live.values))}.` },
+      { tone: waiting > 0 ? 'info' : 'win', title: 'WK41 PUBLISHING PIPELINE',
+        text: `${fmt(waiting)} submitted infographics are awaiting publish. Week 41 closed at Submitted ${signed(wow(ws.submitted.values))} and Live ${signed(wow(ws.live.values))}; over 4 weeks Submitted ${signed(l4w(ws.submitted.values))} and Live ${signed(l4w(ws.live.values))}.` },
     ]
   }
   const ps = planLine('Submitted', ws.submitted, ws.unit), pl = planLine('Live', ws.live, ws.unit)
@@ -276,7 +276,7 @@ function workstreamInsights(ws: Workstream): Insight[] {
       text: `${fmt(sub)} ${ws.unit} submitted and ${fmt(live)} live. ${pctOf(live, sub)}% of submitted ${ws.unit} are published; ${fmt(waiting)} are still awaiting publish.` },
     { tone: ps.ok && pl.ok ? 'win' : 'warn', title: ps.ok && pl.ok ? 'AHEAD OF PLAN' : 'PLAN WATCH',
       text: `${ps.text} ${pl.text}` },
-    { tone: ds > 0 || dl > 0 ? 'win' : 'warn', title: 'MOMENTUM: WK 39 → WK 40',
+    { tone: ds > 0 || dl > 0 ? 'win' : 'warn', title: 'MOMENTUM: WK 40 → WK 41',
       text: `This week Submitted ${signed(ds)} and Live ${signed(dl)}. Over the last 4 weeks Submitted ${signed(l4w(ws.submitted.values))} and Live ${signed(l4w(ws.live.values))}.` },
   ]
 }
@@ -288,14 +288,14 @@ function backlinkInsights(): Insight[] {
   return [
     { tone: 'info', title: 'TOTAL BACKLINKS ACQUIRED', text: `${fmt(cur)} of the overall ${fmt(t.goal)} backlinks (${pctOf(cur, t.goal)}%). ${fmt(t.goal - cur)} remain to reach the goal.` },
     { tone: ahead >= 0 ? 'win' : 'warn', title: ahead >= 0 ? 'AHEAD OF PLAN' : 'BEHIND PLAN', text: `${fmt(cur)} acquired vs ${fmt(t.planToDate ?? 0)} plan till date (${signed(ahead)}).` },
-    { tone: wow(t.values) > 0 ? 'win' : 'warn', title: 'MOMENTUM: WK 39 → WK 40', text: `${signed(wow(t.values))} this week (${fmt(t.values[t.values.length - 2])} → ${fmt(cur)}) and ${signed(l4w(t.values))} over 4 weeks. Best week so far: ${fmtDate(best)} at ${signed(adds[best])}.` },
+    { tone: wow(t.values) > 0 ? 'win' : 'warn', title: 'MOMENTUM: WK 40 → WK 41', text: `${signed(wow(t.values))} this week (${fmt(t.values[t.values.length - 2])} → ${fmt(cur)}) and ${signed(l4w(t.values))} over 4 weeks. Best week so far: ${fmtDate(best)} at ${signed(adds[best])}.` },
   ]
 }
 
 function WorkstreamSlide({ ws }: { ws: Workstream }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
-      <KeyInsights insights={workstreamInsights(ws)} weekLabel="Wk40 · 02 Nov" />
+      <KeyInsights insights={workstreamInsights(ws)} weekLabel="Wk45 · 09 Nov" />
       <div>
         <SlideTitle title={ws.title} sub={`${ws.subtitle} · ${ws.submitted.values.length} weeks, ${fmtDate(0)} → ${fmtDate(ws.submitted.values.length - 1)}`} />
         <SubmittedVsLive sub={last(ws.submitted)} live={last(ws.live)} unit={ws.unit} />
@@ -317,7 +317,7 @@ function BacklinksSlide() {
   const wk = t.values.length - 1
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
-      <KeyInsights insights={backlinkInsights()} weekLabel="Wk40 · 02 Nov" />
+      <KeyInsights insights={backlinkInsights()} weekLabel="Wk45 · 09 Nov" />
       <SlideTitle title="Backlinks" sub={`Cumulative backlinks acquired · ${t.values.length} weeks, ${fmtDate(0)} → ${fmtDate(wk)}`} />
       <KpiStrip title="Backlinks – Acquired" t={t} accent="#7c3aed" />
       <PlanActualChart t={t} hero series="Actual" heading={`Backlinks: Plan ${fmt(t.goal)} vs Actual ${fmt(t.values[wk])}`} />
